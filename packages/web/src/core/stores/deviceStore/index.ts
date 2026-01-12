@@ -73,6 +73,7 @@ export interface Device extends DeviceData {
   metadata: Map<number, Protobuf.Mesh.DeviceMetadata>;
   connection?: MeshDevice;
   activeNode: number;
+  remoteAdminTarget: number | null; // Node number for remote administration, null means local
   pendingSettingsChanges: boolean;
   messageDraft: string;
   unreadCounts: Map<number, number>;
@@ -92,6 +93,8 @@ export interface Device extends DeviceData {
   ): Protobuf.LocalOnly.LocalModuleConfig[K] | undefined;
   setHardware: (hardware: Protobuf.Mesh.MyNodeInfo) => void;
   setActiveNode: (node: number) => void;
+  setRemoteAdminTarget: (nodeNum: number | null) => void;
+  getRemoteAdminTarget: () => number | null;
   setPendingSettingsChanges: (state: boolean) => void;
   addChannel: (channel: Protobuf.Channel.Channel) => void;
   addWaypoint: (
@@ -220,6 +223,7 @@ function deviceFactory(
     metadata: new Map(),
     connection: undefined,
     activeNode: 0,
+    remoteAdminTarget: null,
     dialog: {
       import: false,
       QR: false,
@@ -565,6 +569,20 @@ function deviceFactory(
 
       return device.waypoints.find((waypoint) => waypoint.id === waypointId);
     },
+    setRemoteAdminTarget: (nodeNum) => {
+      set(
+        produce<PrivateDeviceState>((draft) => {
+          const device = draft.devices.get(id);
+          if (device) {
+            device.remoteAdminTarget = nodeNum;
+          }
+        }),
+      );
+    },
+    getRemoteAdminTarget: () => {
+      const device = get().devices.get(id);
+      return device?.remoteAdminTarget ?? null;
+    },
     setActiveNode: (node) => {
       set(
         produce<PrivateDeviceState>((draft) => {
@@ -694,10 +712,13 @@ function deviceFactory(
         return;
       }
 
+      // Use remote admin target if set, otherwise use "self" for local admin
+      const destination = device.remoteAdminTarget ?? "self";
+
       device.connection?.sendPacket(
         toBinary(Protobuf.Admin.AdminMessageSchema, message),
         Protobuf.Portnums.PortNum.ADMIN_APP,
-        "self",
+        destination,
       );
     },
 

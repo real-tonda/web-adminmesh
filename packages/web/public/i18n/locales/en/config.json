@@ -437,6 +437,14 @@
     "loggingSettings": {
       "description": "Settings for Logging",
       "label": "Logging Settings"
+    },
+    "remoteAdmin": {
+      "label": "Remote Administration",
+      "selectNode": "Select node to administer",
+      "localDevice": "Local Device",
+      "administering": "Administering",
+      "node": "Node {{shortName}} ({{nodeNum}})",
+      "warning": "Warning: You are administering a remote node. Configuration changes will be sent as admin messages over the mesh network."
     }
   },
   "user": {
